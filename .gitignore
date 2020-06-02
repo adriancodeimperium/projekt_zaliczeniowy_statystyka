@@ -1,0 +1,4 @@
+venv
+.idea
+*.gv
+*.svg

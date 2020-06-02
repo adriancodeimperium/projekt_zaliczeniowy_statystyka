@@ -1,13 +1,8 @@
 import csv
-import os
 import neat
 from typing import List, Dict
 
 from neat.reporting import BaseReporter
-
-import pdb
-
-import visualize
 
 
 class MyReporter(BaseReporter):
@@ -51,10 +46,18 @@ class Dataset:
 
 
 class NeatNNPresentation:
-    def __init__(self, dataset: Dataset, neat_config: neat.Config, max_generations: int = 100):
+    def __init__(self,
+                 dataset: Dataset,
+                 neat_config: neat.Config,
+                 max_generations: int = 100,
+                 population_size: int = 100
+                 ):
         self.dataset: Dataset = dataset
         self.neat_config: neat.Config = neat_config
         self.max_generations: int = max_generations
+        self.population_size: int = population_size
+        self.neat_config.pop_size = population_size
+        self.best_genome = None
 
     def evaluate_genomes(self, genomes, config):
         for genome_id, genome in genomes:
@@ -67,29 +70,4 @@ class NeatNNPresentation:
     def run(self):
         population = neat.Population(self.neat_config)
         population.add_reporter(MyReporter())
-        best_genome = population.run(self.evaluate_genomes, self.max_generations)
-        winner_net = neat.nn.FeedForwardNetwork.create(best_genome, self.neat_config)
-        visualize.draw_net(self.neat_config, best_genome, True)
-        for input_data, expected_output in self.dataset.get_records_for_evaluation():
-            net_output = winner_net.activate(input_data)
-            print("input {!r}, expected output {!r}, got {!r}".format(input_data, expected_output, net_output))
-
-
-if __name__ == "__main__":
-    this_dir = os.path.dirname(__file__)
-
-    cfg = neat.Config(
-        genome_type=neat.DefaultGenome,
-        reproduction_type=neat.DefaultReproduction,
-        species_set_type=neat.DefaultSpeciesSet,
-        stagnation_type=neat.DefaultStagnation,
-        filename=os.path.join(this_dir, "config", "neat.ini")
-    )
-
-    nnp = NeatNNPresentation(
-        dataset=Dataset(iris_file_path=os.path.join(this_dir, "data", "iris.csv")),
-        neat_config=cfg,
-        max_generations=3000
-    )
-
-    nnp.run()
+        return population.run(self.evaluate_genomes, self.max_generations)
